@@ -152,6 +152,7 @@ var ns_kb_targets := []
 var puddles_positions: Dictionary
 var strat: Strat
 var aero_plant: bool
+var y_knockback: bool
 
 func start_sequence(new_party: Dictionary) -> void:
 	assert(new_party != null, "Error. Where the party at?")
@@ -170,6 +171,7 @@ func start_sequence(new_party: Dictionary) -> void:
 		strat = Strat.NA
 	# Apply user settings
 	aero_plant = SavedVariables.save_data["settings"]["p4_ct_aero_plant"]
+	y_knockback = SavedVariables.save_data["settings"]["p4_y_knockback"]
 	
 	instantiate_party(new_party)
 	on_toggle_bots_visible()
@@ -532,7 +534,10 @@ func move_post_exa_4():
 ## 35.8
 # Move to Rewind posistions.
 func move_rewind():
-	move_party(party, CTPos.REWIND_REF[exaline_spawns])
+	if y_knockback:
+		move_party(party, CTPos.REWIND_REF_Y[exaline_spawns])
+	else:
+		move_party(party, CTPos.REWIND_REF[exaline_spawns])
 
 
 ## 39.6
@@ -573,12 +578,15 @@ func clone_cast_spirit():
 ## 40.6
 # Move to post-rewind spread.
 func move_jump_spread():
-	if exaline_spawns == Intercards.NW:
-		for key: String in CTPos.JUMP_SPREAD_NW:
-			party[key].move_to(CTPos.JUMP_SPREAD_NW[key])
+	if y_knockback:
+		move_party(party, CTPos.JUMP_SPREAD_REF[exaline_spawns])
 	else:
-		for key: String in CTPos.JUMP_SPREAD_NE:
-			party[key].move_to(CTPos.JUMP_SPREAD_NE[key].rotated(arena_rotation[exaline_spawns]))
+		if exaline_spawns == Intercards.NW:
+			for key: String in CTPos.JUMP_SPREAD_NW:
+				party[key].move_to(CTPos.JUMP_SPREAD_NW[key])
+		else:
+			for key: String in CTPos.JUMP_SPREAD_NE:
+				party[key].move_to(CTPos.JUMP_SPREAD_NE[key].rotated(arena_rotation[exaline_spawns]))
 
 
 ## 41.0
@@ -652,6 +660,9 @@ func jump_hit():
 	var pc: PlayableCharacter = party[jump_target]
 	ground_aoe_controller.spawn_circle(v2(pc.global_position), JUMP_RADIUS,
 		JUMP_LIFETIME, JUMP_COLOR, [1, 1, "Spirit Taker (Oracle Jump)", [pc]])
+	
+	if y_knockback:
+		apply_kb_resist(party)
 
 
 ## 46.6
@@ -688,16 +699,16 @@ func play_usurper_short():
 func knockback_1_hit():
 	var kb_vector = Vector2(0.0, -WINGS_KNOCKBACK_DISTANCE) if east_exa else Vector2(0.0, WINGS_KNOCKBACK_DISTANCE)
 	ct_knockback(kb_vector)
+	var nearest_4 = nearest_4_players(false, !east_exa, party)
+	
 	# Check for tank closest
-	if ew_kb_targets.size() < 4:
-		print("Error: Not enough targets found in kb scan (Probably got knocked out of arena).")
-		return
-	var nearest = ew_kb_targets[0]
-	if party_ct[nearest] != "t1" and party_ct[nearest] != "t2":
-		fail_list.add_fail(str(get_char(nearest).get_name(), " was closest to Hallowed Wings (non-tank)"))
+	var nearest = nearest_4[0]
+	if nearest.get_role() != "t1" and nearest.get_role() != "t2":
+		fail_list.add_fail(str(nearest.get_name(), " was closest to Hallowed Wings (non-tank)"))
+		
 	# Assign Magic Vulns
-	for key in ew_kb_targets:
-		get_char(key).add_debuff(MAGIC_VULN_ICON, MAGIC_VULN_DURATION)
+	for pc in nearest_4:
+		pc.add_debuff(MAGIC_VULN_ICON, MAGIC_VULN_DURATION)
 
 ## 52.5
 # Hide Usurper
@@ -715,16 +726,15 @@ func knockback_1_hit():
 func knockback_2_hit():
 	var kb_vector = Vector2(-WINGS_KNOCKBACK_DISTANCE, 0.0) if north_exa else Vector2(WINGS_KNOCKBACK_DISTANCE, 0.0)
 	ct_knockback(kb_vector)
+	var nearest_4 = nearest_4_players(true, !north_exa, party)
+	
 	# Check for tank closest
-	if ns_kb_targets.size() < 4:
-		print("Error: Not enough targets found in kb scan (Probably got knocked out of arena).")
-		return
-	var nearest = ns_kb_targets[0]
-	if party_ct[nearest] != "t1" and party_ct[nearest] != "t2":
-		fail_list.add_fail(str(get_char(nearest).get_name(), " was closest to Hallowed Wings (non-tank)"))
+	var nearest = nearest_4[0]
+	if nearest.get_role() != "t1" and nearest.get_role() != "t2":
+		fail_list.add_fail(str(nearest.get_name(), " was closest to Hallowed Wings (non-tank)"))
+		
 	# Assign Magic Vulns and check for double hits
-	for key in ns_kb_targets:
-		var pc: PlayableCharacter = get_char(key)
+	for pc in nearest_4:
 		if pc.has_debuff("magic_vuln"):
 			fail_list.add_fail(str(pc.get_name(), " failed Hallowed Wings (2 stacks of Magic Vuln)"))
 		else:
@@ -922,6 +932,36 @@ func move_party_ct_and_soak(pos: Dictionary) -> void:
 				push_warning("Cannot find %s puddle to soak." % pos[key])
 		else:
 			pc.move_to(pos[key])
+
+
+func apply_kb_resist(party_dict: Dictionary) -> void:
+	for pc: PlayableCharacter in party_dict.values():
+		if pc.is_player() and !Global.spectate_mode:
+			continue
+		arms_length(pc)
+
+
+func arms_length(pc: PlayableCharacter) -> void:
+	pc.kb_resist = true
+	var timer: Timer = Timer.new()
+	timer.wait_time = 6.0
+	add_child(timer)
+	timer.timeout.connect(func() -> void: pc.kb_resist = false)
+	timer.start()
+
+
+func nearest_4_players(north: bool, reverse: bool, party_dict: Dictionary) -> Array:
+	var compare_index = 0 if north else 2
+	var party = party_dict.values().duplicate()
+	party.sort_custom(
+		func(pc1: PlayableCharacter, pc2: PlayableCharacter): 
+			return pc1.global_position[compare_index] > pc2.global_position[compare_index]
+	)
+
+	if reverse:
+		party.reverse()
+	
+	return party.slice(0, 4)
 
 
 # Triggered when a spell hits Roomates. Check if avoidable AoE

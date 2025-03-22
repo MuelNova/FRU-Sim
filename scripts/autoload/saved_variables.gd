@@ -32,6 +32,7 @@ var save_data: Dictionary = {
 		"p4_ct_strat": 0,  # [NA, MUR]
 		"p4_ct_am_strat": 0,    # [4-4, 7-1 (T1), 7-1 (T2)]
 		"p4_ct_aero_plant": false,
+		"p4_y_knockback": false,
 		"pt_list_order": ["t1", "t2", "h1", "h2", "m1", "m2", "r1", "r2"],
 		"pt_list_player_top": true
 	},

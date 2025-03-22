@@ -315,6 +315,18 @@ const REWIND_SW := {
 	"h1": G1_PARTY_SW + RS2, "h2": G2_PARTY_SW + RS2
 }
 
+const REWIND_REF_Y := [REWIND_Y_N, REWIND_Y_N, REWIND_Y_S, REWIND_Y_S]
+const REWIND_Y_N = {
+	"t1": Vector2(20, -18.38), "t2": Vector2(20, 18.38),
+	"m1": Vector2(6, 0), "r1": Vector2(6, 0), "h1": Vector2(6, 0),
+	"m2": Vector2(6, 0), "r2": Vector2(6, 0), "h2": Vector2(6, 0)
+}
+const REWIND_Y_S = {
+	"t1": Vector2(-20, 18.38), "t2": Vector2(-20, -18.38),
+	"m1": Vector2(-6, 0), "r1": Vector2(-6, 0), "h1": Vector2(-6, 0),
+	"m2": Vector2(-6, 0), "r2": Vector2(-6, 0), "h2": Vector2(-6, 0)
+}
+
 const JUMP_SPREAD_NE := {
 	"t1": T1_SPREAD_NE, "t2": T2_SPREAD_NE,
 	"m1": M1_SPREAD_NE, "m2": M2_SPREAD_NE, 
@@ -326,6 +338,20 @@ const JUMP_SPREAD_NW := {
 	"m1": M1_SPREAD_NW, "m2": M2_SPREAD_NW, 
 	"r1": R1_SPREAD_NW, "r2": R2_SPREAD_NW, 
 	"h1": H1_SPREAD_NW, "h2": H2_SPREAD_NW
+}
+
+const JUMP_SPREAD_REF := [JUMP_SPREAD_Y_N, JUMP_SPREAD_Y_N, JUMP_SPREAD_Y_S, JUMP_SPREAD_Y_S]
+const JUMP_SPREAD_Y_N := {
+	"t1": Vector2(33, -24), "t2": Vector2(33, 24),
+	"r1": Vector2(16, -34), "r2": Vector2(16, 34), 
+	"m1": Vector2(-15, -19), "m2": Vector2(-15, 19), 
+	"h1": Vector2(6, -15), "h2": Vector2(6, 15)
+}
+const JUMP_SPREAD_Y_S := {
+	"t1": Vector2(-33, 24), "t2": Vector2(-33, -24),
+	"r1": Vector2(-16, 34), "r2": Vector2(-16, -34), 
+	"m1": Vector2(15, 19), "m2": Vector2(15, -19), 
+	"h1": Vector2(-6, 15), "h2": Vector2(-6, -15)
 }
 
 const AKH_MORN := {
