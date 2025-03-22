@@ -17,7 +17,8 @@ class_name LockonController
 
 enum {PS_CROSS, PS_CIRCLE, PS_SQUARE, PS_TRIANGLE,
 	DEFAM, DIVEBOMB, DOOM, LC_1, LC_2, LC_3, LR_ORB,
-	SPREAD_MARKER, GAZE, STACK_MARKER, CD_COG, SPREAD_MARKER_APOC}
+	SPREAD_MARKER, GAZE, STACK_MARKER, CD_COG, SPREAD_MARKER_APOC, 
+	ATTACK_1, ATTACK_2, ATTACK_3, ATTACK_4}
 
 var res_paths := {
 	PS_CROSS: "",
@@ -35,13 +36,18 @@ var res_paths := {
 	GAZE: "res://scenes/common/player_characters/lockon/gaze.tscn",
 	STACK_MARKER: "res://scenes/common/player_characters/lockon/stack_marker.tscn",
 	CD_COG: "res://scenes/p3/lockon/cd_cog.tscn",
-	SPREAD_MARKER_APOC: "res://scenes/p3/lockon/spread_marker_apoc.tscn"
+	SPREAD_MARKER_APOC: "res://scenes/p3/lockon/spread_marker_apoc.tscn",
+	ATTACK_1: "res://scenes/common/player_characters/lockon/target_markers/tar_1.tscn",
+	ATTACK_2: "res://scenes/common/player_characters/lockon/target_markers/tar_2.tscn",
+	ATTACK_3: "res://scenes/common/player_characters/lockon/target_markers/tar_3.tscn",
+	ATTACK_4: "res://scenes/common/player_characters/lockon/target_markers/tar_4.tscn",
 }
 var meta_ids := {
 	PS_CROSS: 0, PS_CIRCLE: 1, PS_SQUARE: 2, PS_TRIANGLE: 3,
 	DEFAM: 4, DIVEBOMB: 5, DOOM: 6, LC_1: 7, LC_2: 8, LC_3: 9, 
 	LR_ORB: 10, SPREAD_MARKER: 11, GAZE: 12, STACK_MARKER: 13, CD_COG: 14,
-	SPREAD_MARKER_APOC: 15
+	SPREAD_MARKER_APOC: 15, 
+	ATTACK_1: 16, ATTACK_2: 17, ATTACK_3: 18, ATTACK_4: 19,
 }
 
 var lockon_node_path := "Lockon"

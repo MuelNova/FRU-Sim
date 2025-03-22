@@ -6,7 +6,7 @@
 extends Node
 
 enum Intercards {NW, NE, SE, SW}
-enum Strat {NA, MUR}
+enum Strat {NA, MUR, MMW}
 
 # Debuff Icon Scenes
 const AERO_ICON = preload("res://scenes/ui/auras/debuff_icons/p4/aero.tscn")
@@ -69,6 +69,7 @@ const AKH_MORN_LIGHT_COLOR := Color.GOLD
 const AKH_MORN_DARK_COLOR := Color.DARK_VIOLET
 
 const NA_WE_PRIO := ["h2", "h1", "t2", "t1", "m1", "m2", "r1", "r2"]
+const MMW_WE_PRIO := ["h1", "h2", "t1", "t2", "m1", "m2", "r1", "r2"]
 const MUR_WE_PRIO := ["h1", "r1", "m1", "t1", "t2", "m2", "r2", "h2"]
 const DEBUFF_ASSIGNMENTS := {
 	"r_aero_sw": {AERO_ICON: 14, WYRMCLAW_ICON: 40, RETURN_ICON: 33},
@@ -80,6 +81,13 @@ const DEBUFF_ASSIGNMENTS := {
 	"b_ud": {UNHOLY_DARKNESS_ICON: 17, WYRMFANG_ICON: 40, RETURN_ICON: 33},
 	"b_water": {DARK_WATER_ICON: 12, WYRMFANG_ICON: 40, RETURN_ICON: 33}
 }
+const MMW_DEBUFF_MARK := {
+	"b_erupt": LockonController.ATTACK_4,
+	"b_ice": LockonController.ATTACK_3,
+	"b_ud": LockonController.ATTACK_1,
+	"b_water": LockonController.ATTACK_2,
+}
+const MMW_DEBUFF_MARK_LIST := ["b_erupt", "b_ice", "b_ud", "b_water"]
 const QUIETUS_DURATION := 31
 # Shift the duplicates to the end so we can line up index with dropdown selection.
 const ASSIGNMENT_INDEX := ["r_aero_sw", "r_ice_w", "b_erupt",
@@ -148,7 +156,12 @@ var aero_plant: bool
 func start_sequence(new_party: Dictionary) -> void:
 	assert(new_party != null, "Error. Where the party at?")
 	ground_aoe_controller.preload_aoe(["line", "circle", "donut"])
-	#lockon_controller.pre_load([13])
+	lockon_controller.pre_load([
+		LockonController.ATTACK_1, 
+		LockonController.ATTACK_2, 
+		LockonController.ATTACK_3, 
+		LockonController.ATTACK_4,
+	])
 	# Get Strat.
 	strat = SavedVariables.save_data["settings"]["p4_ct_strat"]
 	if strat is not int or strat >= Strat.size() or strat < 0:
@@ -197,10 +210,17 @@ func assign_debuffs() -> void:
 	# Static debuffs
 	for key in DEBUFF_ASSIGNMENTS:
 		for debuff_icon in DEBUFF_ASSIGNMENTS[key]:
+			var player = get_char(key)
 			if debuff_icon == WYRMCLAW_ICON or debuff_icon == WYRMFANG_ICON:
-				get_char(key).add_debuff(debuff_icon, DEBUFF_ASSIGNMENTS[key][debuff_icon]).connect(on_wyrm_debuff_timeout)
+				player.add_debuff(debuff_icon, DEBUFF_ASSIGNMENTS[key][debuff_icon]).connect(on_wyrm_debuff_timeout)
 			else:
-				get_char(key).add_debuff(debuff_icon, DEBUFF_ASSIGNMENTS[key][debuff_icon])
+				player.add_debuff(debuff_icon, DEBUFF_ASSIGNMENTS[key][debuff_icon])
+			
+			# Mark Attack1-4 for MMW
+			if strat == Strat.MMW and key in MMW_DEBUFF_MARK_LIST:
+				lockon_controller.add_marker(
+					MMW_DEBUFF_MARK[key], player
+				)
 	# Quietus
 	for i: int in quietus_keys.size():
 		get_char(quietus_keys[i]).add_debuff(QUIETUS_ICON, QUIETUS_DURATION)
@@ -835,6 +855,8 @@ func na_mur_party_setup() -> void:
 		we_prio = NA_WE_PRIO
 	elif strat == Strat.MUR:
 		we_prio = MUR_WE_PRIO
+	elif strat == Strat.MMW:
+		we_prio = MMW_WE_PRIO
 	
 	# Shuffle dps/sup roles
 	var shuffle_list := party.keys()
