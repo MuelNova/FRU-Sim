@@ -133,6 +133,13 @@ const LR_PARTY_MANA := {
 	"m1": LR_EW * SW + S_OFFSET, "m2": LR_NS * SW + S_OFFSET,
 	"r1": LR_NS * SE + S_OFFSET, "r2": LR_EW * SE + S_OFFSET
 	}
+# MMW
+const LR_PARTY_MMW := {
+	"h1": LR_NS * NE + S_OFFSET, "h2": LR_EW * NE + S_OFFSET,
+	"t1": LR_EW * NW + S_OFFSET, "t2": LR_NS * NW + S_OFFSET,
+	"m1": LR_EW * SW + S_OFFSET, "m2": LR_NS * SW + S_OFFSET,
+	"r1": LR_NS * SE + S_OFFSET, "r2": LR_EW * SE + S_OFFSET
+	}
 
 # Bowtie positions
 const BOWTIE_DD := {

@@ -5,7 +5,7 @@
 
 extends Node
 
-enum Strat {NA, EU, JP, MANA, MUR}
+enum Strat {NA, EU, JP, MANA, MUR, MMW}
 enum DanceStrat {SHARED, T1SOLO, T2SOLO}
 
 # Debuff Icon Scenes
@@ -66,6 +66,8 @@ const EU_JP_DPS_LINEUP := ["m1", "m2", "r1", "r2"]  # W>E or S>N
 const EU_JP_WE_PRIO := ["t1", "t2", "h1", "h2", "m1", "m2", "r1", "r2"]
 # Mana Prio, matches lineup.
 const MANA_WE_PRIO := ["h1", "h2", "t1", "t2", "m1", "m2", "r1", "r2"]
+# MMW Prio, matches lineup.
+const MMW_WE_PRIO := ["t1", "t2", "h1", "h2", "m1", "m2", "r1", "r2"]
 
 # Entity Positions
 const USURPER_POS := {"final": Vector3(0, 0, -6), "final_rota": 135.0}
@@ -152,7 +154,7 @@ func start_sequence(new_party: Dictionary) -> void:
 ## 2.0
 # Move part mid
 func move_mid():
-	if strat == Strat.MANA:
+	if strat in [Strat.MANA, Strat.MMW]:
 		move_party(DDPos.MANA_STACK_PARTY)
 	else:
 		move_party(DDPos.MID_STACK_PARTY)
@@ -179,7 +181,7 @@ func move_first_spread() -> void:
 		move_party(DDPos.POST_AA_PARTY_EU)
 	elif strat == Strat.JP:
 		move_party(DDPos.POST_AA_PARTY_JP)
-	elif strat == Strat.MANA:
+	elif strat in [Strat.MANA, Strat.MMW]:
 		move_party(DDPos.POST_AA_PARTY_MANA)
 
 ## 9.3
@@ -208,6 +210,8 @@ func move_lr_pre_pos():
 		move_party(DDPos.LR_PARTY_JP)
 	elif strat == Strat.MANA:
 		move_party(DDPos.LR_PARTY_MANA)
+	elif strat == Strat.MMW:
+		move_party(DDPos.LR_PARTY_MMW)
 
 
 ## 14.7
@@ -348,7 +352,7 @@ func move_spirit_spread():
 			pc.move_to(DDPos.SPIRIT_DD_SP_NA[key])
 	elif strat == Strat.EU:
 		move_party_dd(DDPos.SPIRIT_DD_EU)
-	elif strat in [Strat.JP, Strat.MANA]:
+	elif strat in [Strat.JP, Strat.MANA, Strat.MMW]:
 		move_party_dd(DDPos.SPIRIT_DD_JP)
 
 ## 35.5
@@ -623,8 +627,8 @@ func instantiate_party(new_party: Dictionary) -> void:
 	# Standard role keys
 	party = new_party
 	# NAUR/MANA/MUR setup
-	if strat in [Strat.NA, Strat.MANA, Strat.MUR]:
-		na_mana_mur_party_setup()
+	if strat in [Strat.NA, Strat.MANA, Strat.MUR, Strat.MMW]:
+		na_mana_mur_mmw_party_setup()
 	# Vetical/EU setup
 	elif strat in [Strat.EU, Strat.JP]:
 		eu_jp_party_setup()
@@ -639,7 +643,7 @@ func instantiate_party(new_party: Dictionary) -> void:
 	east_wing = randi() % 2 == 0
 
 
-func na_mana_mur_party_setup() -> void:
+func na_mana_mur_mmw_party_setup() -> void:
 	# Shuffle tank, healers and dps (tank/healer/dps[0] + dps[1] will be LR tethers)
 	var tanks = Global.TANK_ROLE_KEYS.duplicate()
 	var healers = Global.HEALER_ROLE_KEYS.duplicate()
@@ -663,13 +667,22 @@ func na_mana_mur_party_setup() -> void:
 			dps[player_index] = dps[swap_index]
 			dps[swap_index] = player_key
 	
-	# Build shuffled tether link list (0 linked to 1 and 3, etc.)
-	tether_links.append(tanks[0])
-	tether_links.append(dps[0])
-	tether_links.append(dps[1])
-	tether_links.shuffle()
-	# Add healer at index 0 (Healer always NW anchor)
-	tether_links.push_front(healers[0])
+	if strat == Strat.MMW:
+		# Build shuffled tether link list (0 linked to 1 and 3, etc.)
+		tether_links.append(healers[0])
+		tether_links.append(dps[0])
+		tether_links.append(dps[1])
+		tether_links.shuffle()
+		# Add healer at index 0 (Tanks always NW anchor)
+		tether_links.push_front(tanks[0])
+	else:
+		# Build shuffled tether link list (0 linked to 1 and 3, etc.)
+		tether_links.append(tanks[0])
+		tether_links.append(dps[0])
+		tether_links.append(dps[1])
+		tether_links.shuffle()
+		# Add healer at index 0 (Healer always NW anchor)
+		tether_links.push_front(healers[0])
 	
 	# Handle tether swap to make bowtie shape
 	# Use lineup to determine which dps is East/West
@@ -684,8 +697,11 @@ func na_mana_mur_party_setup() -> void:
 	elif strat == Strat.MUR:
 		we_prio = MUR_WE_PRIO
 		lineup = MUR_WE_PRIO
+	elif strat == Strat.MMW:
+		we_prio = MMW_WE_PRIO
+		lineup = MMW_WE_PRIO
 	else:
-		assert(false, "Invalid Strat selection in NA/Mana/MUR party setup.")
+		assert(false, "Invalid Strat selection in NA/Mana/MUR/MMW party setup.")
 	
 	var east_dps
 	var west_dps
@@ -696,23 +712,45 @@ func na_mana_mur_party_setup() -> void:
 		east_dps = dps[0]
 		west_dps = dps[1]
 	# Default bowtie shape (no swaps needed)
-	var bowtie_tethers := [healers[0], tanks[0], east_dps, west_dps]  # [nw, ne, se, sw]
-	# Get the pair of keys linked to the healer
-	var linked_to_nw := [tether_links[1], tether_links[3]]
-	# If box shape, swap tank with east dps
-	if linked_to_nw.has(tanks[0]) and linked_to_nw.has(west_dps):
-		bowtie_tethers[1] = east_dps # ne
-		bowtie_tethers[2] = tanks[0] # se
-	# If hourglass shape, swap tank with west dps
-	elif linked_to_nw.has(tanks[0]) and linked_to_nw.has(east_dps):
-		bowtie_tethers[1] = west_dps # ne
-		bowtie_tethers[3] = tanks[0] # sw
-	# If bowtie shape, no swaps needed
+	var bowtie_tethers
+	if strat == Strat.MMW:
+		bowtie_tethers = [tanks[0], healers[0], east_dps, west_dps]  # [nw, ne, se, sw]
 	else:
-		assert(!linked_to_nw.has(tanks[0]), "Bowtie shape with tank linked to healer should not be possible.")
+		bowtie_tethers = [healers[0], tanks[0], east_dps, west_dps]  # [nw, ne, se, sw]
+	# Get the pair of keys linked to the index0 (MMW is tank, others are healers) 
+	var linked_to_nw := [tether_links[1], tether_links[3]]
+	
+	if strat == Strat.MMW:
+		# If box shape, swap tank with west dps
+		if linked_to_nw.has(healers[0]) and linked_to_nw.has(west_dps):
+			bowtie_tethers[0] = west_dps # nw
+			bowtie_tethers[3] = tanks[0] # sw
+		# If hourglass shape, swap healer with west dps
+		elif linked_to_nw.has(healers[0]) and linked_to_nw.has(east_dps):
+			bowtie_tethers[1] = west_dps # ne
+			bowtie_tethers[3] = healers[0] # sw
+		# If bowtie shape, no swaps needed
+		else:
+			assert(!linked_to_nw.has(healers[0]), "Bowtie shape with tank linked to healer should not be possible.")
+	else:
+		# If box shape, swap tank with east dps
+		if linked_to_nw.has(tanks[0]) and linked_to_nw.has(west_dps):
+			bowtie_tethers[1] = east_dps # ne
+			bowtie_tethers[2] = tanks[0] # se
+		# If hourglass shape, swap tank with west dps
+		elif linked_to_nw.has(tanks[0]) and linked_to_nw.has(east_dps):
+			bowtie_tethers[1] = west_dps # ne
+			bowtie_tethers[3] = tanks[0] # sw
+		# If bowtie shape, no swaps needed
+		else:
+			assert(!linked_to_nw.has(tanks[0]), "Bowtie shape with tank linked to healer should not be possible.")
 	
 	# Handle water debuffs and potential swap
-	var non_tethers := [healers[1], tanks[1], dps[2], dps[3]]  # [nw, ne, se, sw]
+	var non_tethers
+	if strat == Strat.MMW:
+		non_tethers = [tanks[1], healers[1], dps[2], dps[3]]  # [nw, ne, se, sw]
+	else:
+		non_tethers = [healers[1], tanks[1], dps[2], dps[3]]  # [nw, ne, se, sw]
 	# Swap DPS based on W>E prio
 	if we_prio.find(dps[2]) < we_prio.find(dps[3]):
 		non_tethers[2] = dps[3]
