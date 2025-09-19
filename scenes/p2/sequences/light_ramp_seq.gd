@@ -5,7 +5,7 @@
 
 extends Node
 
-enum Strat {NA, EU, ELE, MANA}
+enum Strat {NA, EU, ELE, MANA, HEXAGRAM}
 
 # Debuff Icon Scenes
 const CHAINS_LOCKED = preload("res://scenes/ui/auras/debuff_icons/p2/chains_locked.tscn")
@@ -64,6 +64,7 @@ var lr_party: Dictionary
 var support_keys := ["t2", "t1", "h2", "h1"]
 var dps_keys := ["r1", "r2", "m1", "m2"]
 var lr_north_lineup := ["t2", "t1", "h2", "h1"]
+var lr_north_lineup_hex := ["t1", "t2", "h1", "h2"]
 var lr_south_lineup := ["r1", "r2", "m1", "m2"]
 var lr_south_lineup_ele := ["m1", "m2", "r1", "r2"]
 var orb_keys := []
@@ -71,6 +72,7 @@ var spread_keys := []
 var na_we_spread_prio := [4, 3, 5, 2, 6, 1, 7, 0] # W > E Prio [r1, h1, r2, h2, m1, t1, m2, t2]
 var eu_ns_spread_prio := [3, 2, 1, 0, 4, 5, 6, 7] # N > S Prio [h1, h2, t1, t2, r1, r2, m1, m2]
 #var ele_we_spread_prio := [6, 3, 7, 2, 4, 1, 5, 0] # W > E Prio [m1, h1, m2, h2, r1, t1, r2, t2]
+var hex_spread_prio := [5, 4, 7, 6, 2, 3, 0, 1] # N > S & W > E [t1, t2, h1, h2, m1, m2, r1 ,r1], but in reversed order
 # Will be randomized. First 4 get 1 stacks of debuff, last 4 are quad tower soakers.
 var lightsteeped_keys := ["t2", "t1", "h2", "h1", "r1", "r2", "m1", "m2"]
 var solo_tower_positions := [Vector2(19, -32.8), Vector2(37.7, 0), Vector2(19, 32.8),
@@ -111,6 +113,8 @@ func cast_lr() -> void:
 func move_pre_pos() -> void:
 	if strat in [Strat.ELE, Strat.MANA]:
 		move_party(party, LRPosNA.pre_pos_44_ele)
+	elif strat == Strat.HEXAGRAM:
+		move_party(party, LRPosCN.pre_pos_44)
 	else:
 		move_party(party, LRPosNA.pre_pos_44)
 
@@ -154,7 +158,7 @@ func move_puddles_tower_lineup() -> void:
 	elif strat == Strat.ELE: 
 		party[lr_party["n_puddle"]].move_to(LRPosEU.tower_lineup["n_puddle"])
 		party[lr_party["s_puddle"]].move_to(LRPosEU.tower_lineup["s_puddle"])
-	elif strat == Strat.MANA:
+	elif strat in [Strat.MANA, Strat.HEXAGRAM]:
 		party[lr_party["n_puddle"]].move_to(LRPosJP.tower_lineup["n_puddle"])
 		party[lr_party["s_puddle"]].move_to(LRPosJP.tower_lineup["s_puddle"])
 
@@ -167,6 +171,8 @@ func move_tower_lineup() -> void:
 		move_lr_party(LRPosEU.tower_lineup)
 	elif strat == Strat.MANA:
 		move_lr_party(LRPosJP.tower_lineup)
+	elif strat == Strat.HEXAGRAM:
+		move_lr_party(LRPosCN.tower_lineup)
 
 ## 11.00
 # Solo towers spawn
@@ -185,7 +191,7 @@ func move_tower_soak():
 		move_lr_party(LRPosNA.tower_soak)
 	elif strat == Strat.EU:
 		move_lr_party(LRPosEU.tower_soak)
-	elif strat == Strat.MANA:
+	elif strat in [Strat.MANA, Strat.HEXAGRAM]:
 		move_lr_party(LRPosJP.tower_soak)
 
 ## 15.60
@@ -208,6 +214,8 @@ func first_puddle_snapshot() -> void:
 		move_lr_party(LRPosEU.puddle_dodge_1)
 	elif strat == Strat.MANA:
 		move_lr_party(LRPosJP.puddle_dodge_1)
+	elif strat == Strat.HEXAGRAM:
+		move_lr_party(LRPosCN.puddle_dodge_1)
 
 
 ## 17.20
@@ -218,7 +226,7 @@ func second_puddle_snapshot() -> void:
 		move_lr_party(LRPosNA.puddle_dodge_2)
 	elif strat == Strat.EU:
 		move_lr_party(LRPosEU.puddle_dodge_2)
-	elif strat == Strat.MANA:
+	elif strat in [Strat.MANA, Strat.HEXAGRAM]:
 		move_lr_party(LRPosJP.puddle_dodge_2)
 
 
@@ -230,7 +238,7 @@ func third_puddle_snapshot() -> void:
 		move_lr_party(LRPosNA.puddle_dodge_3)
 	elif strat == Strat.EU:
 		move_lr_party(LRPosEU.puddle_dodge_3)
-	elif strat == Strat.MANA:
+	elif strat in [Strat.MANA, Strat.HEXAGRAM]:
 		move_lr_party(LRPosJP.puddle_dodge_3)
 
 
@@ -283,7 +291,7 @@ func forth_puddle_snapshot() -> void:
 		move_lr_party(LRPosNA.puddle_dodge_4)
 	elif strat == Strat.EU:
 		move_lr_party(LRPosEU.puddle_dodge_4)
-	elif strat == Strat.MANA:
+	elif strat in [Strat.MANA, Strat.HEXAGRAM]:
 		move_lr_party(LRPosJP.puddle_dodge_4)
 
 
@@ -296,7 +304,7 @@ func fifth_puddle_snapshot() -> void:
 		move_lr_party(LRPosNA.puddle_dodge_5)
 	elif strat == Strat.EU:
 		move_lr_party(LRPosEU.puddle_dodge_5)
-	elif strat == Strat.MANA:
+	elif strat in [Strat.MANA, Strat.HEXAGRAM]:
 		move_lr_party(LRPosJP.puddle_dodge_5)
 	first_orbs_telegraph()
 
@@ -323,7 +331,7 @@ func second_orbs_spawn () -> void:
 
 # Intermediate dodge to simulate slower movement leading up to shared hit
 func move_to_intermediate_spot() -> void:
-	if strat in [Strat.NA, Strat.ELE, Strat.MANA]:
+	if strat in [Strat.NA, Strat.ELE, Strat.MANA, Strat.HEXAGRAM]:
 		move_lr_party(LRPosNA.inter_dodge)
 	elif strat == Strat.EU:
 		move_lr_party(LRPosEU.inter_dodge)
@@ -332,7 +340,7 @@ func move_to_intermediate_spot() -> void:
 ## 24.50
 # Move groups to first safe spot
 func move_safe_spot_1() -> void:
-	if strat in [Strat.NA, Strat.ELE, Strat.MANA]:
+	if strat in [Strat.NA, Strat.ELE, Strat.MANA, Strat.HEXAGRAM]:
 		if n_orb_pattern:
 			move_lr_party(LRPosNA.north_orb_first_dodge)
 		else:
@@ -391,7 +399,7 @@ func first_orbs_hit() -> void:
 # Move group to second safe spot
 # Remove chains
 func move_safe_spot_2() -> void:
-	if strat in [Strat.NA, Strat.ELE, Strat.MANA]:
+	if strat in [Strat.NA, Strat.ELE, Strat.MANA, Strat.HEXAGRAM]:
 		if n_orb_pattern:
 			move_lr_party(LRPosNA.north_orb_second_dodge)
 		else:
@@ -420,7 +428,7 @@ func second_orbs_hit() -> void:
 
 
 func move_middle_safe_spot() -> void:
-	if strat in [Strat.NA, Strat.ELE, Strat.MANA]:
+	if strat in [Strat.NA, Strat.ELE, Strat.MANA, Strat.HEXAGRAM]:
 		if n_orb_pattern:
 			move_lr_party(LRPosNA.n_pattern_middle_dodge)
 		else:
@@ -467,11 +475,15 @@ func move_spread_pairs() -> void:
 	if halo_spread_pattern:
 		if strat == Strat.MANA:
 			move_party(party, LRPosJP.spread_clocks)
+		elif strat == Strat.HEXAGRAM:
+			move_party(party, LRPosCN.spread_clocks)
 		else:
 			move_party(party, LRPosNA.spread_clocks)
 	else:
 		if strat == Strat.MANA:
 			move_party(party, LRPosJP.pairs)
+		elif strat == Strat.HEXAGRAM:
+			move_party(party, LRPosCN.pairs)
 		else:
 			move_party(party, LRPosNA.pairs)
 
@@ -495,8 +507,10 @@ func spread_pairs_hit() -> void:
 ## 38.0
 # Move to clock pos
 func move_to_clock_pos() -> void:
-	if strat == Strat.MANA:
+	if  strat == Strat.MANA:
 		move_party(party, LRPosJP.spread_clocks)
+	elif strat == Strat.HEXAGRAM:
+		move_party(party, LRPosCN.spread_clocks)
 	else:
 		move_party(party, LRPosNA.spread_clocks)
 
@@ -540,6 +554,10 @@ func four_four_party_setup() -> void:
 	elif strat in [Strat.ELE, Strat.MANA]:
 		spread_prio = na_we_spread_prio
 		lr_south_lineup = lr_south_lineup_ele
+	elif strat == Strat.HEXAGRAM:
+		spread_prio = hex_spread_prio
+		lr_north_lineup = lr_north_lineup_hex
+		lr_south_lineup = lr_south_lineup_ele
 	# LR assigments: 2 puddles, 6 chains, 2 chained orbs
 	# Get 2 unique random keys
 	var spread_keys_index := []
@@ -559,27 +577,33 @@ func four_four_party_setup() -> void:
 	
 	# Remove spread from lineups (0-3 is north, 4-7 is south)
 	for index in spread_keys_index:
-		if index < 4:
-			if lr_north_lineup.size() <= index:
-				spread_keys.append(lr_north_lineup.pop_back())
-			else:
-				spread_keys.append(lr_north_lineup.pop_at(index))
-		else:
-			if lr_south_lineup.size() <= index - 4:
-				spread_keys.append(lr_south_lineup.pop_back())
-			else:
-				spread_keys.append(lr_south_lineup.pop_at(index - 4))
+		var target_role = lightsteeped_keys[index]
+		spread_keys.append(target_role)
+		
+		var north_index = lr_north_lineup.find(target_role)
+		var south_index = lr_south_lineup.find(target_role)
+		if north_index != -1:
+			lr_north_lineup.pop_at(north_index)
+		elif south_index != -1:
+			lr_south_lineup.pop_at(south_index)
 	# Check if we're 4/2, if so we move cw most person to the other group
-	if lr_north_lineup.size() > 3:
-		lr_south_lineup.append(lr_north_lineup.pop_front())
-	elif lr_south_lineup.size() > 3:
-		lr_north_lineup.append(lr_south_lineup.pop_front())
+	if strat == Strat.HEXAGRAM:
+		if lr_north_lineup.size() > 3:
+			lr_south_lineup.append(lr_north_lineup.pop_back())
+		elif lr_south_lineup.size() > 3:
+			lr_north_lineup.append(lr_south_lineup.pop_back())
+	else:
+		if lr_north_lineup.size() > 3:
+			lr_south_lineup.append(lr_north_lineup.pop_front())
+		elif lr_south_lineup.size() > 3:
+			lr_north_lineup.append(lr_south_lineup.pop_front())
 	# Populate Dictionary
 	lr_party = { 
 		"n0" : lr_north_lineup[0], "n1" : lr_north_lineup[1], "n2" : lr_north_lineup[2],
 		"s0" : lr_south_lineup[0], "s1" : lr_south_lineup[1], "s2" : lr_south_lineup[2],
 		"n_puddle" : spread_keys[0], "s_puddle" : spread_keys[1],
 	}
+	print(lr_party)
 	# Pick orb targets (adjacent chain targets)
 	var valid_orb_keys = ["n0", "n1", "n2", "s0", "s1", "s2"]
 	var orb_index_1 = randi_range(0, 5)
