@@ -36,7 +36,7 @@ grow_vertical = 0
 [node name="VersionLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Beta v1.7.0
+text = "Beta v1.7.2
 "
 label_settings = SubResource("LabelSettings_o4brj")
 horizontal_alignment = 2
